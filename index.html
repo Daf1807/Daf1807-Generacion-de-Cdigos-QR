@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador QR de Actividades</title>
+    <!-- Cargamos la librería ligera QRCode.js desde un CDN fiable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Contenedor Principal */
+        .app-container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* Sección de Entrada */
+        .input-section {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s ease;
+            font-family: monospace; /* Para códigos */
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* Chips de ayuda rápida */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            background-color: #eff6ff;
+            color: var(--primary-color);
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Sección de Visualización QR */
+        .qr-display {
+            background-color: #ffffff;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Contenedor específico para la librería QR */
+        #qrcode {
+            margin-bottom: 16px;
+        }
+
+        #qrcode img {
+            margin: 0 auto; /* Centrar imagen generada */
+            display: block;
+            max-width: 100%;
+        }
+
+        .code-text {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            word-break: break-all;
+            padding: 4px 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* Botones de Acción */
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Notificaciones tipo Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #334155;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Iconos SVG simples */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Estilos para Impresión */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .app-container {
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            .input-section, .actions, header p {
+                display: none !important;
+            }
+            header h1 {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .qr-display {
+                border: 2px solid #000;
+                width: 100%;
+                max-width: 300px; /* Tamaño físico controlado al imprimir */
+                margin: 0 auto;
+                min-height: auto;
+                padding: 20px;
+            }
+            /* Ocultar URL o pies de página del navegador si es posible */
+            @page {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Generador QR de Actividades</h1>
+            <p>Herramienta de codificación para registro conductual</p>
+        </header>
+
+        <main>
+            <!-- Entrada de Datos -->
+            <section class="input-section">
+                <label for="activityCode">Código de Actividad</label>
+                <div class="input-wrapper">
+                    <input type="text" id="activityCode" placeholder="Ej: LAP_I" maxlength="50" autocomplete="off">
+                </div>
+                
+                <!-- Atajos para facilitar la codificación -->
+                <div class="quick-actions">
+                    <button class="chip" onclick="appendCode('LAP_I')">LAP_I (Portátil Inicio)</button>
+                    <button class="chip" onclick="appendCode('LAP_F')">LAP_F (Portátil Fin)</button>
+                    <button class="chip" onclick="appendCode('MOB_')">MOB_ (Móvil)</button>
+                    <button class="chip" onclick="appendCode('TAB_')">TAB_ (Tableta)</button>
+                </div>
+            </section>
+
+            <!-- Visualización del Código -->
+            <section class="qr-display" id="qrContainer">
+                <div id="qrcode"></div>
+                <div id="textDisplay" class="code-text" style="display: none;"></div>
+                <div id="emptyState" class="placeholder-text">
+                    Ingrese un código para generar el QR
+                </div>
+            </section>
+
+            <!-- Botones de Acción -->
+            <section class="actions">
+                <button id="btnDownload" class="btn btn-secondary" disabled onclick="downloadQR()">
+                    <!-- Icono Descarga -->
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    Descargar
+                </button>
+                <button id="btnPrint" class="btn btn-primary" disabled onclick="printQR()">
+                    <!-- Icono Impresora -->
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                    Imprimir
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notificación Flotante -->
+    <div id="toast" class="toast">Código QR descargado</div>
+
+    <script>
+        // Referencias al DOM
+        const inputField = document.getElementById('activityCode');
+        const qrContainer = document.getElementById('qrcode');
+        const textDisplay = document.getElementById('textDisplay');
+        const emptyState = document.getElementById('emptyState');
+        const btnDownload = document.getElementById('btnDownload');
+        const btnPrint = document.getElementById('btnPrint');
+        const toast = document.getElementById('toast');
+
+        // Instancia del generador QR (inicialmente vacío)
+        let qrcodeObj = new QRCode(qrContainer, {
+            text: "",
+            width: 180,
+            height: 180,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M // Nivel de corrección medio (balance entre densidad y robustez)
+        });
+
+        // Evento: Escuchar cambios en el input
+        inputField.addEventListener('input', (e) => {
+            const code = e.target.value.trim();
+            updateQR(code);
+        });
+
+        // Función para actualizar el estado del QR
+        function updateQR(code) {
+            // Limpiar el código anterior
+            qrContainer.innerHTML = "";
+            
+            if (!code) {
+                // Estado vacío
+                qrContainer.style.display = 'none';
+                textDisplay.style.display = 'none';
+                emptyState.style.display = 'block';
+                btnDownload.disabled = true;
+                btnPrint.disabled = true;
+                return;
+            }
+
+            // Generar nuevo QR
+            qrContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+            textDisplay.style.display = 'block';
+            textDisplay.textContent = code;
+
+            // Usar la librería para hacer el QR
+            qrcodeObj = new QRCode(qrContainer, {
+                text: code,
+                width: 180,
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.M
+            });
+
+            // Habilitar botones
+            btnDownload.disabled = false;
+            btnPrint.disabled = false;
+        }
+
+        // Función auxiliar para agregar prefijos desde los chips
+        function appendCode(prefix) {
+            inputField.value = prefix;
+            // Disparar el evento manualmente
+            inputField.dispatchEvent(new Event('input'));
+            inputField.focus();
+        }
+
+        // Función: Descargar PNG
+        function downloadQR() {
+            // Buscar la imagen generada dentro del div (QRCode.js genera un canvas o img)
+            const img = qrContainer.querySelector('img');
+            
+            if (img && img.src) {
+                const link = document.createElement('a');
+                link.href = img.src;
+                // Nombre de archivo basado en el código
+                const filename = inputField.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                link.download = `qr_${filename}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast("Imagen descargada con éxito");
+            } else {
+                // Fallback si la librería usa Canvas
+                const canvas = qrContainer.querySelector('canvas');
+                if(canvas) {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png");
+                    const filename = inputField.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    link.download = `qr_${filename}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast("Imagen descargada con éxito");
+                }
+            }
+        }
+
+        // Función: Imprimir
+        function printQR() {
+            window.print();
+        }
+
+        // Función: Mostrar notificación
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
